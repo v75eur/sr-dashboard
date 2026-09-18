@@ -152,6 +152,126 @@ def api_broadcast():
 
     return jsonify({"ok": True, "resultats": resultats})
 
+
+# ========== MESSAGES ==========
+GH_MSG_FILE = "messages.json"
+MAX_MSG_PER_USER = 12
+
+def gh_get_messages():
+    url = f"https://api.github.com/repos/{GH_REPO}/contents/{GH_MSG_FILE}?ref={GH_BRANCH}"
+    r = requests.get(url, headers=gh_headers(), timeout=15)
+    if r.status_code != 200:
+        return {}, None
+    data = r.json()
+    content = base64.b64decode(data["content"]).decode("utf-8")
+    return json.loads(content), data["sha"]
+
+def gh_put_messages(msgs, sha, message):
+    url = f"https://api.github.com/repos/{GH_REPO}/contents/{GH_MSG_FILE}"
+    content = base64.b64encode(json.dumps(msgs, indent=2, ensure_ascii=False).encode()).decode()
+    payload = {"message": message, "content": content, "sha": sha, "branch": GH_BRANCH}
+    r = requests.put(url, headers=gh_headers(), json=payload, timeout=15)
+    return r.status_code in (200, 201), r.text
+
+@app.route("/messages")
+def messages_page():
+    if not check_login():
+        return redirect(url_for("index"))
+    msgs, _ = gh_get_messages()
+    users, _ = gh_get_users()
+    return render_template("messages.html", messages=msgs, users=users)
+
+@app.route("/contact")
+def contact_page():
+    users, _ = gh_get_users()
+    today = datetime.now().strftime("%Y-%m-%d")
+    actifs = {p: i for p, i in users.items() if i.get("expire", "") >= today}
+    return render_template("contact.html", users=actifs)
+
+@app.route("/api/messages", methods=["POST"])
+def api_send_message():
+    body = request.get_json() or {}
+    pseudo = (body.get("pseudo") or "").strip()
+    texte  = (body.get("texte") or "").strip()
+    if not pseudo or not texte:
+        return jsonify({"error": "pseudo et message requis"}), 400
+    if len(texte) > 1000:
+        return jsonify({"error": "message trop long (max 1000)"}), 400
+
+    msgs, sha = gh_get_messages()
+    if sha is None:
+        return jsonify({"error": "messages.json introuvable"}), 500
+
+    if pseudo not in msgs:
+        msgs[pseudo] = []
+
+    msgs[pseudo].append({
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "from": "user",
+        "texte": texte
+    })
+
+    # Garder les 12 derniers
+    msgs[pseudo] = msgs[pseudo][-MAX_MSG_PER_USER:]
+
+    ok, msg = gh_put_messages(msgs, sha, f"Message de {pseudo}")
+    if ok:
+        # Notification ntfy à l'admin
+        try:
+            requests.post(
+                "https://ntfy.sh/bot-trade-sr",
+                data=f"Nouveau message de {pseudo}: {texte}".encode(),
+                headers={"Title": "Nouveau message"},
+                timeout=10
+            )
+        except:
+            pass
+        return jsonify({"ok": True})
+    return jsonify({"error": msg}), 500
+
+@app.route("/api/reply", methods=["POST"])
+def api_reply():
+    if not check_login():
+        return jsonify({"error": "unauthorized"}), 401
+    body = request.get_json() or {}
+    pseudo = (body.get("pseudo") or "").strip()
+    texte  = (body.get("texte") or "").strip()
+    if not pseudo or not texte:
+        return jsonify({"error": "pseudo et message requis"}), 400
+
+    users, _ = gh_get_users()
+    if pseudo not in users:
+        return jsonify({"error": "utilisateur introuvable"}), 404
+
+    topic = users[pseudo].get("topic", "")
+    full_url = topic if topic.startswith("http") else f"https://ntfy.sh/{topic}"
+
+    # Envoi ntfy
+    try:
+        requests.post(
+            full_url,
+            data=texte.encode(),
+            headers={"Title": f"Message de l'admin"},
+            timeout=15
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    # Stocker dans messages.json
+    msgs, sha = gh_get_messages()
+    if sha is not None:
+        if pseudo not in msgs:
+            msgs[pseudo] = []
+        msgs[pseudo].append({
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "from": "admin",
+            "texte": texte
+        })
+        msgs[pseudo] = msgs[pseudo][-MAX_MSG_PER_USER:]
+        gh_put_messages(msgs, sha, f"Réponse à {pseudo}")
+
+    return jsonify({"ok": True})
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
     app.run(host="0.0.0.0", port=port)

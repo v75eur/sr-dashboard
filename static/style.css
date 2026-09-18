@@ -60,3 +60,27 @@ code{background:rgba(0,212,255,.08);padding:.2rem .5rem;border-radius:4px;font-s
 #results h3{font-size:.9rem;margin-bottom:.5rem;color:#00d4ff}
 #results ul{list-style:none}
 #results li{padding:.3rem 0;font-size:.85rem}
+
+/* MESSAGES / CHAT */
+.chat{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem}
+.msg{padding:.7rem 1rem;border-radius:12px;max-width:85%}
+.msg.user{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);align-self:flex-start}
+.msg.admin{background:rgba(123,47,252,.12);border:1px solid rgba(123,47,252,.3);align-self:flex-end;margin-left:auto}
+.msg-head{display:flex;justify-content:space-between;gap:1rem;font-size:.75rem;margin-bottom:.3rem;color:rgba(255,255,255,.6)}
+.msg-body{font-size:.9rem;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.msg-date{font-size:.7rem;color:rgba(255,255,255,.4)}
+.replyForm{display:flex;gap:.5rem;margin-top:.5rem}
+.replyForm input{flex:1;padding:.6rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.9rem}
+.replyForm input:focus{outline:none;border-color:#00d4ff}
+.replyForm button{padding:.6rem 1rem;background:linear-gradient(135deg,#00d4ff,#7b2ffc);border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer}
+.reply-msg{margin-top:.4rem;font-size:.85rem}
+
+/* CONTACT */
+#contactForm{display:flex;flex-direction:column;gap:.8rem}
+#contactForm select,
+#contactForm textarea{padding:.7rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:.9rem;font-family:inherit;width:100%}
+#contactForm select:focus,
+#contactForm textarea:focus{outline:none;border-color:#00d4ff}
+#contactForm textarea{resize:vertical;min-height:100px}
+#contactForm button{padding:.8rem;background:linear-gradient(135deg,#00d4ff,#7b2ffc);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:.95rem}
+#msg{margin-top:1rem;font-size:.9rem;font-weight:600}
