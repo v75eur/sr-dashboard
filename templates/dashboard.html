@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SR Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>📊 SR Dashboard — Utilisateurs</h1>
+    <a href="/logout" class="logout">Déconnexion</a>
+  </header>
+
+  <main>
+    <section class="add-user">
+      <h2>➕ Ajouter / Modifier un utilisateur</h2>
+      <form id="userForm">
+        <input type="text" id="pseudo" placeholder="Pseudo (ex: ali)" required>
+        <input type="text" id="topic" placeholder="Topic ntfy (ex: srbot-ali-xyz)" required>
+        <input type="date" id="expire" required>
+        <input type="text" id="note" placeholder="Note (optionnel)">
+        <button type="submit">Enregistrer</button>
+      </form>
+      <div id="msg"></div>
+    </section>
+
+    <section class="users-list">
+      <h2>👥 Utilisateurs ({{ users|length }})</h2>
+      <table id="usersTable">
+        <thead>
+          <tr><th>Pseudo</th><th>Topic</th><th>Expire</th><th>Note</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+        {% for pseudo, info in users.items() %}
+          <tr data-pseudo="{{ pseudo }}">
+            <td><strong>{{ pseudo }}</strong></td>
+            <td><code>{{ info.topic }}</code></td>
+            <td>{{ info.expire }}</td>
+            <td>{{ info.note or '—' }}</td>
+            <td><button class="del" onclick="delUser('{{ pseudo }}')">🗑️</button></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+<script>
+document.getElementById('userForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    pseudo: document.getElementById('pseudo').value.trim(),
+    topic:  document.getElementById('topic').value.trim(),
+    expire: document.getElementById('expire').value,
+    note:   document.getElementById('note').value.trim()
+  };
+  const r = await fetch('/api/users', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const data = await r.json();
+  const msg = document.getElementById('msg');
+  if (data.ok) {
+    msg.textContent = '✅ Enregistré';
+    msg.className = 'ok';
+    setTimeout(() => location.reload(), 800);
+  } else {
+    msg.textContent = '❌ ' + (data.error || 'Erreur');
+    msg.className = 'err';
+  }
+});
+
+async function delUser(pseudo) {
+  if (!confirm('Supprimer ' + pseudo + ' ?')) return;
+  const r = await fetch('/api/users/' + encodeURIComponent(pseudo), { method: 'DELETE' });
+  const data = await r.json();
+  if (data.ok) location.reload();
+  else alert('Erreur: ' + (data.error || 'inconnue'));
+}
+</script>
+</body>
+</html>

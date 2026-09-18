@@ -1,0 +1,41 @@
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a12;color:#fff;min-height:100vh}
+
+/* LOGIN */
+.login-page{display:flex;align-items:center;justify-content:center}
+.login-box{background:#15152a;border:1px solid rgba(0,212,255,.15);border-radius:16px;padding:2.5rem;width:90%;max-width:400px;text-align:center}
+.login-box h1{font-size:1.5rem;margin-bottom:.5rem}
+.subtitle{color:rgba(255,255,255,.5);font-size:.9rem;margin-bottom:1.5rem}
+.login-box input{width:100%;padding:.8rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:1rem;margin-bottom:1rem}
+.login-box input:focus{outline:none;border-color:#00d4ff}
+.login-box button{width:100%;padding:.8rem;background:linear-gradient(135deg,#00d4ff,#7b2ffc);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:1rem;cursor:pointer}
+.error{background:rgba(255,95,87,.15);border:1px solid rgba(255,95,87,.3);color:#ff5f57;padding:.6rem;border-radius:8px;margin-bottom:1rem;font-size:.9rem}
+
+/* DASHBOARD */
+header{background:#15152a;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.05)}
+header h1{font-size:1.2rem}
+.logout{color:#ff5f57;text-decoration:none;font-size:.9rem;font-weight:600}
+main{padding:2rem;max-width:1200px;margin:0 auto}
+section{background:#15152a;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem}
+section h2{font-size:1.1rem;margin-bottom:1rem}
+#userForm{display:grid;grid-template-columns:1fr 2fr 1fr 1fr auto;gap:.8rem}
+#userForm input{padding:.7rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.9rem}
+#userForm input:focus{outline:none;border-color:#00d4ff}
+#userForm button{padding:.7rem 1.5rem;background:linear-gradient(135deg,#00d4ff,#7b2ffc);border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;white-space:nowrap}
+#msg{margin-top:.8rem;font-size:.9rem;font-weight:600}
+#msg.ok{color:#28c840}
+#msg.err{color:#ff5f57}
+table{width:100%;border-collapse:collapse}
+th,td{padding:.7rem;text-align:left;border-bottom:1px solid rgba(255,255,255,.05);font-size:.9rem}
+th{color:#00d4ff;font-size:.8rem;text-transform:uppercase;letter-spacing:1px}
+code{background:rgba(0,212,255,.08);padding:.2rem .5rem;border-radius:4px;font-size:.85rem;color:#00d4ff}
+.del{background:rgba(255,95,87,.1);border:1px solid rgba(255,95,87,.3);color:#ff5f57;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.9rem}
+.del:hover{background:rgba(255,95,87,.2)}
+
+@media(max-width:768px){
+  #userForm{grid-template-columns:1fr}
+  header{padding:1rem}
+  main{padding:1rem}
+  section{padding:1rem}
+  th,td{font-size:.8rem;padding:.5rem}
+}
