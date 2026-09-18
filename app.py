@@ -38,20 +38,92 @@ def gh_put_users(users, sha, message):
 def check_login():
     return session.get("admin") is True
 
+
+# ========== SÉCURITÉ LOGIN ==========
+GH_ATTEMPTS_FILE = "login_attempts.json"
+MAX_ATTEMPTS = 3
+LOCK_MINUTES = 15
+RESET_CODE = os.getenv("ADMIN_RESET_CODE", "rickreset1994")
+
+def gh_get_attempts():
+    url = f"https://api.github.com/repos/{GH_REPO}/contents/{GH_ATTEMPTS_FILE}?ref={GH_BRANCH}"
+    r = requests.get(url, headers=gh_headers(), timeout=15)
+    if r.status_code != 200:
+        return {"attempts": 0, "locked_until": None}, None
+    data = r.json()
+    content = base64.b64decode(data["content"]).decode("utf-8")
+    return json.loads(content), data["sha"]
+
+def gh_put_attempts(data, sha):
+    url = f"https://api.github.com/repos/{GH_REPO}/contents/{GH_ATTEMPTS_FILE}"
+    content = base64.b64encode(json.dumps(data, indent=2).encode()).decode()
+    payload = {"message": "MAJ tentatives login", "content": content, "sha": sha, "branch": GH_BRANCH}
+    r = requests.put(url, headers=gh_headers(), json=payload, timeout=15)
+    return r.status_code in (200, 201)
+
+def check_locked():
+    data, _ = gh_get_attempts()
+    locked_until = data.get("locked_until")
+    if not locked_until:
+        return False, 0
+    now = datetime.now()
+    lock_time = datetime.strptime(locked_until, "%Y-%m-%d %H:%M:%S")
+    if now >= lock_time:
+        # Déverrouillé automatiquement
+        return False, 0
+    remaining = int((lock_time - now).total_seconds() / 60) + 1
+    return True, remaining
+
+def register_fail():
+    data, sha = gh_get_attempts()
+    if sha is None:
+        return
+    data["attempts"] = data.get("attempts", 0) + 1
+    data["last_attempt"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if data["attempts"] >= MAX_ATTEMPTS:
+        from datetime import timedelta
+        lock_until = datetime.now() + timedelta(minutes=LOCK_MINUTES)
+        data["locked_until"] = lock_until.strftime("%Y-%m-%d %H:%M:%S")
+    gh_put_attempts(data, sha)
+
+def register_success():
+    data, sha = gh_get_attempts()
+    if sha is None:
+        return
+    data["attempts"] = 0
+    data["locked_until"] = None
+    gh_put_attempts(data, sha)
+
 @app.route("/")
 def index():
     if check_login():
         return redirect(url_for("dashboard"))
+    locked, remaining = check_locked()
+    if locked:
+        return render_template("login.html", error=f"🔒 Trop d'essais. Réessaie dans {remaining} min.")
     return render_template("login.html", error=None)
 
 @app.route("/login", methods=["POST"])
 def login():
+    locked, remaining = check_locked()
+    if locked:
+        return render_template("login.html", error=f"🔒 Trop d'essais. Réessaie dans {remaining} min.")
     pwd = request.form.get("password", "")
     h = hashlib.sha256(pwd.encode()).hexdigest()
     if h == ADMIN_HASH:
+        register_success()
         session["admin"] = True
         return redirect(url_for("dashboard"))
-    return render_template("login.html", error="Mot de passe incorrect")
+    # Vérifier code reset
+    if pwd == RESET_CODE:
+        register_success()
+        return render_template("login.html", error="✅ Compteur réinitialisé. Tu peux te reconnecter.")
+    register_fail()
+    data, _ = gh_get_attempts()
+    restants = MAX_ATTEMPTS - data.get("attempts", 0)
+    if restants <= 0:
+        return render_template("login.html", error=f"🔒 Compte verrouillé {LOCK_MINUTES} min.")
+    return render_template("login.html", error=f"Mot de passe incorrect ({restants} essai(s) restant(s))")
 
 @app.route("/logout")
 def logout():
