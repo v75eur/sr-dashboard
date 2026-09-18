@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SR Dashboard — Envoi</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>📢 Envoi de message</h1>
+    <div>
+      <a href="/dashboard" class="logout">← Retour</a>
+      <a href="/logout" class="logout">Déconnexion</a>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>✉️ Envoyer un message personnalisé</h2>
+      <form id="broadcastForm">
+        <label>Destinataire</label>
+        <select id="target">
+          <option value="all">👥 Tous les utilisateurs actifs</option>
+          {% for pseudo, info in users.items() %}
+          <option value="{{ pseudo }}">👤 {{ pseudo }} ({{ info.topic }})</option>
+          {% endfor %}
+        </select>
+
+        <label>Titre</label>
+        <input type="text" id="title" placeholder="Ex: ALERTE XAUUSD" required>
+
+        <label>Message</label>
+        <textarea id="message" rows="6" placeholder="Votre message..." required></textarea>
+
+        <button type="submit">📤 Envoyer</button>
+      </form>
+      <div id="msg"></div>
+      <div id="results"></div>
+    </section>
+  </main>
+
+<script>
+document.getElementById('broadcastForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    target:  document.getElementById('target').value,
+    title:   document.getElementById('title').value.trim(),
+    message: document.getElementById('message').value.trim()
+  };
+  const msg = document.getElementById('msg');
+  const results = document.getElementById('results');
+  msg.textContent = '⏳ Envoi en cours...';
+  msg.className = '';
+  results.innerHTML = '';
+
+  const r = await fetch('/api/broadcast', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const data = await r.json();
+  if (data.ok) {
+    msg.textContent = '✅ Envoyé';
+    msg.className = 'ok';
+    let html = '<h3>Résultats :</h3><ul>';
+    data.resultats.forEach(x => {
+      if (x.status === 200) html += '<li>✅ ' + x.pseudo + ' → OK</li>';
+      else html += '<li>❌ ' + x.pseudo + ' → ' + (x.status || x.error) + '</li>';
+    });
+    html += '</ul>';
+    results.innerHTML = html;
+  } else {
+    msg.textContent = '❌ ' + (data.error || 'Erreur');
+    msg.className = 'err';
+  }
+});
+</script>
+</body>
+</html>

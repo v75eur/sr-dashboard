@@ -1,4 +1,5 @@
 import os, json, base64, hashlib, secrets
+from datetime import datetime
 from flask import Flask, request, redirect, url_for, session, render_template, jsonify
 import requests
 
@@ -105,6 +106,51 @@ def api_delete(pseudo):
     if ok:
         return jsonify({"ok": True, "users": users})
     return jsonify({"error": msg}), 500
+
+@app.route("/broadcast")
+def broadcast_page():
+    if not check_login():
+        return redirect(url_for("index"))
+    users, _ = gh_get_users()
+    return render_template("broadcast.html", users=users)
+
+@app.route("/api/broadcast", methods=["POST"])
+def api_broadcast():
+    if not check_login():
+        return jsonify({"error": "unauthorized"}), 401
+    body = request.get_json() or {}
+    title   = (body.get("title") or "").strip()
+    message = (body.get("message") or "").strip()
+    target  = (body.get("target") or "all").strip()
+    if not title or not message:
+        return jsonify({"error": "titre et message requis"}), 400
+
+    users, _ = gh_get_users()
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    if target == "all":
+        cibles = [(p, i) for p, i in users.items() if i.get("expire", "") >= today and i.get("topic")]
+    else:
+        if target not in users:
+            return jsonify({"error": "utilisateur introuvable"}), 404
+        cibles = [(target, users[target])]
+
+    resultats = []
+    for pseudo, info in cibles:
+        topic = info.get("topic", "")
+        full_url = topic if topic.startswith("http") else f"https://ntfy.sh/{topic}"
+        try:
+            r = requests.post(
+                full_url,
+                data=message.encode("utf-8"),
+                headers={"Title": title.encode("utf-8")},
+                timeout=15
+            )
+            resultats.append({"pseudo": pseudo, "status": r.status_code})
+        except Exception as e:
+            resultats.append({"pseudo": pseudo, "error": str(e)})
+
+    return jsonify({"ok": True, "resultats": resultats})
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
