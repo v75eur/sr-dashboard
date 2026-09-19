@@ -9,9 +9,11 @@
 <body>
   <header>
     <h1>📊 SR Dashboard — Utilisateurs</h1>
-    <a href="/messages" class="logout" style="color:#00d4ff">💬 Messages</a>
-    <a href="/broadcast" class="logout" style="color:#00d4ff">📢 Envoi message</a>
-    <a href="/logout" class="logout">Déconnexion</a>
+    <div>
+      <a href="/messages" class="logout" style="color:#00d4ff">💬 Messages</a>
+      <a href="/broadcast" class="logout" style="color:#00d4ff">📢 Envoi message</a>
+      <a href="/logout" class="logout">Déconnexion</a>
+    </div>
   </header>
 
   <main>
@@ -19,8 +21,9 @@
       <h2>➕ Ajouter / Modifier un utilisateur</h2>
       <form id="userForm">
         <input type="text" id="pseudo" placeholder="Pseudo (ex: ali)" required>
-        <input type="text" id="topic" placeholder="Topic ntfy (ex: srbot-ali-xyz)" required>
+        <input type="text" id="topic" placeholder="Topic ntfy (ex: srbot-ali-a7f3k9)" required>
         <input type="date" id="expire" required>
+        <input type="tel" id="whatsapp" placeholder="WhatsApp (+22997000000)" required>
         <input type="text" id="note" placeholder="Note (optionnel)">
         <button type="submit">Enregistrer</button>
       </form>
@@ -31,16 +34,34 @@
       <h2>👥 Utilisateurs ({{ users|length }})</h2>
       <table id="usersTable">
         <thead>
-          <tr><th>Pseudo</th><th>Topic</th><th>Expire</th><th>Note</th><th>Action</th></tr>
+          <tr>
+            <th>Pseudo</th>
+            <th>Topic</th>
+            <th>Expire</th>
+            <th>WhatsApp</th>
+            <th>Note</th>
+            <th>Actions</th>
+          </tr>
         </thead>
         <tbody>
         {% for pseudo, info in users.items() %}
-          <tr data-pseudo="{{ pseudo }}">
+          <tr data-pseudo="{{ pseudo }}"
+              data-topic="{{ info.topic }}"
+              data-expire="{{ info.expire }}"
+              data-whatsapp="{{ info.whatsapp or '' }}"
+              data-note="{{ info.note or '' }}">
             <td><strong>{{ pseudo }}</strong></td>
             <td><code>{{ info.topic }}</code></td>
             <td>{{ info.expire }}</td>
+            <td>{{ info.whatsapp or '—' }}</td>
             <td>{{ info.note or '—' }}</td>
-            <td><button class="del" onclick="delUser('{{ pseudo }}')">🗑️</button></td>
+            <td>
+              {% if info.whatsapp %}
+              <button class="wa" onclick="envoyerWA('{{ pseudo }}')" title="Envoyer WhatsApp">📱</button>
+              {% endif %}
+              <button class="edit" onclick="editUser('{{ pseudo }}')" title="Modifier">✏️</button>
+              <button class="del" onclick="delUser('{{ pseudo }}')" title="Supprimer">🗑️</button>
+            </td>
           </tr>
         {% endfor %}
         </tbody>
@@ -49,13 +70,15 @@
   </main>
 
 <script>
+// === ENREGISTRER / MODIFIER ===
 document.getElementById('userForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const body = {
-    pseudo: document.getElementById('pseudo').value.trim(),
-    topic:  document.getElementById('topic').value.trim(),
-    expire: document.getElementById('expire').value,
-    note:   document.getElementById('note').value.trim()
+    pseudo:   document.getElementById('pseudo').value.trim(),
+    topic:    document.getElementById('topic').value.trim(),
+    expire:   document.getElementById('expire').value,
+    whatsapp: document.getElementById('whatsapp').value.trim(),
+    note:     document.getElementById('note').value.trim()
   };
   const r = await fetch('/api/users', {
     method: 'POST',
@@ -74,12 +97,55 @@ document.getElementById('userForm').addEventListener('submit', async (e) => {
   }
 });
 
+// === SUPPRIMER ===
 async function delUser(pseudo) {
   if (!confirm('Supprimer ' + pseudo + ' ?')) return;
   const r = await fetch('/api/users/' + encodeURIComponent(pseudo), { method: 'DELETE' });
   const data = await r.json();
   if (data.ok) location.reload();
   else alert('Erreur: ' + (data.error || 'inconnue'));
+}
+
+// === MODIFIER (pré-remplir le formulaire) ===
+function editUser(pseudo) {
+  const tr = document.querySelector('tr[data-pseudo="' + pseudo + '"]');
+  if (!tr) return;
+  document.getElementById('pseudo').value   = pseudo;
+  document.getElementById('topic').value    = tr.dataset.topic;
+  document.getElementById('expire').value   = tr.dataset.expire;
+  document.getElementById('whatsapp').value = tr.dataset.whatsapp;
+  document.getElementById('note').value     = tr.dataset.note;
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// === ENVOYER WHATSAPP ===
+function envoyerWA(pseudo) {
+  const tr = document.querySelector('tr[data-pseudo="' + pseudo + '"]');
+  if (!tr) return;
+  const topic    = tr.dataset.topic;
+  const expire   = tr.dataset.expire;
+  const whatsapp = tr.dataset.whatsapp;
+  if (!whatsapp) { alert('Pas de numéro WhatsApp pour ' + pseudo); return; }
+
+  // Nettoyer le numéro : garder uniquement les chiffres
+  const num = whatsapp.replace(/[^0-9]/g, '');
+
+  // Construire le message
+  const msg =
+    'Bonjour ' + pseudo + ' 👋\n\n' +
+    'Merci pour votre confiance en SR Bot !\n\n' +
+    'Voici vos identifiants pour recevoir vos signaux de trading :\n\n' +
+    '📱 Votre topic ntfy : https://ntfy.sh/' + topic + '\n\n' +
+    '📖 Guide d\'abonnement (3 étapes) :\n' +
+    '1. Téléchargez l\'app "ntfy" (F-Droid ou Play Store)\n' +
+    '2. Ouvrez l\'app → cliquez sur "+"\n' +
+    '3. Collez ce lien : https://ntfy.sh/' + topic + '\n\n' +
+    '✅ Dès que vous êtes abonné, vous recevrez automatiquement mes alertes.\n\n' +
+    '⏱️ Votre accès est valable jusqu\'au ' + expire + '.\n\n' +
+    'Bonne chance et bon trading ! 🚀';
+
+  const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
 }
 </script>
 </body>
