@@ -232,7 +232,7 @@ def api_send_message():
     ok, msg = gh_put_messages(msgs, sha, f"Message de {pseudo}")
     if ok:
         try:
-            requests.post("https://ntfy.sh/bot-trade-sr",
+            requests.post("https://ntfy.sh/admin-sr",
                 data=f"Nouveau message de {pseudo}: {texte}".encode(),
                 headers={"Title": "Nouveau message"}, timeout=10)
         except: pass
