@@ -11,7 +11,6 @@
     <h1>📊 SR Dashboard — Utilisateurs</h1>
     <div>
       <a href="/messages" class="logout" style="color:#00d4ff">💬 Messages</a>
-      <a href="/broadcast" class="logout" style="color:#00d4ff">📢 Envoi message</a>
       <a href="/logout" class="logout">Déconnexion</a>
     </div>
   </header>
@@ -70,7 +69,6 @@
   </main>
 
 <script>
-// === ENREGISTRER / MODIFIER ===
 document.getElementById('userForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const body = {
@@ -97,7 +95,6 @@ document.getElementById('userForm').addEventListener('submit', async (e) => {
   }
 });
 
-// === SUPPRIMER ===
 async function delUser(pseudo) {
   if (!confirm('Supprimer ' + pseudo + ' ?')) return;
   const r = await fetch('/api/users/' + encodeURIComponent(pseudo), { method: 'DELETE' });
@@ -106,7 +103,6 @@ async function delUser(pseudo) {
   else alert('Erreur: ' + (data.error || 'inconnue'));
 }
 
-// === MODIFIER (pré-remplir le formulaire) ===
 function editUser(pseudo) {
   const tr = document.querySelector('tr[data-pseudo="' + pseudo + '"]');
   if (!tr) return;
@@ -118,7 +114,6 @@ function editUser(pseudo) {
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
-// === ENVOYER WHATSAPP ===
 function envoyerWA(pseudo) {
   const tr = document.querySelector('tr[data-pseudo="' + pseudo + '"]');
   if (!tr) return;
@@ -126,11 +121,7 @@ function envoyerWA(pseudo) {
   const expire   = tr.dataset.expire;
   const whatsapp = tr.dataset.whatsapp;
   if (!whatsapp) { alert('Pas de numéro WhatsApp pour ' + pseudo); return; }
-
-  // Nettoyer le numéro : garder uniquement les chiffres
   const num = whatsapp.replace(/[^0-9]/g, '');
-
-  // Construire le message
   const msg =
     'Bonjour ' + pseudo + ' 👋\n\n' +
     'Merci pour votre confiance en SR Bot !\n\n' +
@@ -143,7 +134,6 @@ function envoyerWA(pseudo) {
     '✅ Dès que vous êtes abonné, vous recevrez automatiquement mes alertes.\n\n' +
     '⏱️ Votre accès est valable jusqu\'au ' + expire + '.\n\n' +
     'Bonne chance et bon trading ! 🚀';
-
   const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
   window.open(url, '_blank');
 }

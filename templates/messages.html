@@ -11,7 +11,6 @@
     <h1>💬 Messages reçus</h1>
     <div>
       <a href="/dashboard" class="logout" style="color:#00d4ff">📊 Dashboard</a>
-      <a href="/broadcast" class="logout" style="color:#00d4ff">📢 Envoi</a>
       <a href="/logout" class="logout">Déconnexion</a>
     </div>
   </header>
@@ -35,43 +34,8 @@
         </div>
         {% endfor %}
       </div>
-      <form class="replyForm" data-pseudo="{{ pseudo }}">
-        <input type="text" placeholder="Répondre à {{ pseudo }}..." required>
-        <button type="submit">📤</button>
-      </form>
-      <div class="reply-msg"></div>
     </section>
     {% endfor %}
   </main>
-
-<script>
-document.querySelectorAll('.replyForm').forEach(form => {
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const pseudo = form.dataset.pseudo;
-    const input = form.querySelector('input');
-    const texte = input.value.trim();
-    const msgDiv = form.parentElement.querySelector('.reply-msg');
-    if (!texte) return;
-    msgDiv.textContent = '⏳ Envoi...';
-    msgDiv.style.color = '#00d4ff';
-    const r = await fetch('/api/reply', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({pseudo, texte})
-    });
-    const data = await r.json();
-    if (data.ok) {
-      msgDiv.textContent = '✅ Envoyé';
-      msgDiv.style.color = '#28c840';
-      input.value = '';
-      setTimeout(() => location.reload(), 1000);
-    } else {
-      msgDiv.textContent = '❌ ' + (data.error || 'Erreur');
-      msgDiv.style.color = '#ff5f57';
-    }
-  });
-});
-</script>
 </body>
 </html>
