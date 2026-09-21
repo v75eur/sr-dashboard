@@ -112,7 +112,11 @@ def check_login():
 def compute_stats(users):
     today = datetime.now().date()
     in_7_days = today + timedelta(days=7)
-    stats = {"total": 0, "actifs": 0, "expires": 0, "bientot": 0}
+    stats = {
+        "total": 0, "actifs": 0, "expires": 0, "bientot": 0,
+        "today_str": today.strftime("%Y-%m-%d"),
+        "bientot_str": in_7_days.strftime("%Y-%m-%d")
+    }
     for pseudo, info in users.items():
         stats["total"] += 1
         try:
