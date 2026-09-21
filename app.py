@@ -10,10 +10,8 @@ ADMIN_HASH = os.getenv("ADMIN_HASH", "d0695d2f4b6487fb81c7047ba01d06d5065aa1a9f1
 GH_TOKEN   = os.getenv("GH_TOKEN", "")
 GH_REPO    = os.getenv("GH_REPO", "v75eur/sr")
 GH_FILE    = "users.json"
-GH_MSG_FILE = "messages.json"
 GH_ATTEMPTS_FILE = "login_attempts.json"
 GH_BRANCH  = "main"
-MAX_MSG_PER_USER = 12
 MAX_ATTEMPTS = 3
 LOCK_MINUTES = 15
 RESET_CODE = os.getenv("ADMIN_RESET_CODE", "rickreset1994")
@@ -25,7 +23,6 @@ def gh_headers():
         "X-GitHub-Api-Version": "2022-11-28"
     }
 
-# ---------- USERS ----------
 def gh_get_users():
     url = f"https://api.github.com/repos/{GH_REPO}/contents/{GH_FILE}?ref={GH_BRANCH}"
     r = requests.get(url, headers=gh_headers(), timeout=15)
@@ -42,24 +39,6 @@ def gh_put_users(users, sha, message):
     r = requests.put(url, headers=gh_headers(), json=payload, timeout=15)
     return r.status_code in (200, 201), r.text
 
-# ---------- MESSAGES ----------
-def gh_get_messages():
-    url = f"https://api.github.com/repos/{GH_REPO}/contents/{GH_MSG_FILE}?ref={GH_BRANCH}"
-    r = requests.get(url, headers=gh_headers(), timeout=15)
-    if r.status_code != 200:
-        return {}, None
-    data = r.json()
-    content = base64.b64decode(data["content"]).decode("utf-8")
-    return json.loads(content), data["sha"]
-
-def gh_put_messages(msgs, sha, message):
-    url = f"https://api.github.com/repos/{GH_REPO}/contents/{GH_MSG_FILE}"
-    content = base64.b64encode(json.dumps(msgs, indent=2, ensure_ascii=False).encode()).decode()
-    payload = {"message": message, "content": content, "sha": sha, "branch": GH_BRANCH}
-    r = requests.put(url, headers=gh_headers(), json=payload, timeout=15)
-    return r.status_code in (200, 201), r.text
-
-# ---------- LOGIN ATTEMPTS ----------
 def gh_get_attempts():
     url = f"https://api.github.com/repos/{GH_REPO}/contents/{GH_ATTEMPTS_FILE}?ref={GH_BRANCH}"
     r = requests.get(url, headers=gh_headers(), timeout=15)
@@ -108,7 +87,6 @@ def register_success():
 def check_login():
     return session.get("admin") is True
 
-# ---------- STATS ----------
 def compute_stats(users):
     today = datetime.now().date()
     in_7_days = today + timedelta(days=7)
@@ -132,7 +110,6 @@ def compute_stats(users):
             stats["actifs"] += 1
     return stats
 
-# ---------- ROUTES ----------
 @app.route("/")
 def index():
     if check_login():
@@ -155,13 +132,13 @@ def login():
         return redirect(url_for("dashboard"))
     if pwd == RESET_CODE:
         register_success()
-        return render_template("login.html", error="✅ Compteur réinitialisé. Tu peux te reconnecter.")
+        return render_template("login.html", error="✅ Compteur réinitialisé.")
     register_fail()
     data, _ = gh_get_attempts()
     restants = MAX_ATTEMPTS - data.get("attempts", 0)
     if restants <= 0:
         return render_template("login.html", error=f"🔒 Compte verrouillé {LOCK_MINUTES} min.")
-    return render_template("login.html", error=f"Mot de passe incorrect ({restants} essai(s) restant(s))")
+    return render_template("login.html", error=f"Mot de passe incorrect ({restants} essai(s))")
 
 @app.route("/logout")
 def logout():
@@ -194,7 +171,7 @@ def api_save():
     whatsapp = (body.get("whatsapp") or "").strip()
     note     = (body.get("note") or "").strip()
     if not pseudo or not topic or not expire or not whatsapp:
-        return jsonify({"error": "champs manquants (pseudo, topic, expire, whatsapp)"}), 400
+        return jsonify({"error": "champs manquants"}), 400
     users, sha = gh_get_users()
     if sha is None:
         return jsonify({"error": "users.json introuvable"}), 500
@@ -217,46 +194,6 @@ def api_delete(pseudo):
     ok, msg = gh_put_users(users, sha, f"Suppression utilisateur {pseudo}")
     if ok:
         return jsonify({"ok": True, "users": users})
-    return jsonify({"error": msg}), 500
-
-@app.route("/messages")
-def messages_page():
-    if not check_login():
-        return redirect(url_for("index"))
-    msgs, _ = gh_get_messages()
-    users, _ = gh_get_users()
-    return render_template("messages.html", messages=msgs, users=users)
-
-@app.route("/contact")
-def contact_page():
-    users, _ = gh_get_users()
-    today = datetime.now().strftime("%Y-%m-%d")
-    actifs = {p: i for p, i in users.items() if i.get("expire", "") >= today}
-    return render_template("contact.html", users=actifs)
-
-@app.route("/api/messages", methods=["POST"])
-def api_send_message():
-    body = request.get_json() or {}
-    pseudo = (body.get("pseudo") or "").strip()
-    texte  = (body.get("texte") or "").strip()
-    if not pseudo or not texte:
-        return jsonify({"error": "pseudo et message requis"}), 400
-    if len(texte) > 1000:
-        return jsonify({"error": "message trop long (max 1000)"}), 400
-    msgs, sha = gh_get_messages()
-    if sha is None:
-        return jsonify({"error": "messages.json introuvable"}), 500
-    if pseudo not in msgs:
-        msgs[pseudo] = []
-    msgs[pseudo].append({
-        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "from": "user",
-        "texte": texte
-    })
-    msgs[pseudo] = msgs[pseudo][-MAX_MSG_PER_USER:]
-    ok, msg = gh_put_messages(msgs, sha, f"Message de {pseudo}")
-    if ok:
-        return jsonify({"ok": True})
     return jsonify({"error": msg}), 500
 
 @app.route("/export.csv")
