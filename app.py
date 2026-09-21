@@ -309,6 +309,11 @@ def api_broadcast():
             resultats.append({"pseudo": pseudo, "error": str(e)})
     return jsonify({"ok": True, "resultats": resultats})
 
+
+@app.route("/ping")
+def ping():
+    return "ok", 200
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
