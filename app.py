@@ -1,6 +1,6 @@
-import os, json, base64, hashlib, secrets
+import os, json, base64, hashlib, secrets, csv, io
 from datetime import datetime, timedelta
-from flask import Flask, request, redirect, url_for, session, render_template, jsonify
+from flask import Flask, request, redirect, url_for, session, render_template, jsonify, Response
 import requests
 
 app = Flask(__name__)
@@ -108,6 +108,26 @@ def register_success():
 def check_login():
     return session.get("admin") is True
 
+# ---------- STATS ----------
+def compute_stats(users):
+    today = datetime.now().date()
+    in_7_days = today + timedelta(days=7)
+    stats = {"total": 0, "actifs": 0, "expires": 0, "bientot": 0}
+    for pseudo, info in users.items():
+        stats["total"] += 1
+        try:
+            expire_date = datetime.strptime(info.get("expire", ""), "%Y-%m-%d").date()
+        except:
+            continue
+        if expire_date < today:
+            stats["expires"] += 1
+        elif expire_date <= in_7_days:
+            stats["bientot"] += 1
+            stats["actifs"] += 1
+        else:
+            stats["actifs"] += 1
+    return stats
+
 # ---------- ROUTES ----------
 @app.route("/")
 def index():
@@ -149,7 +169,8 @@ def dashboard():
     if not check_login():
         return redirect(url_for("index"))
     users, _ = gh_get_users()
-    return render_template("dashboard.html", users=users)
+    stats = compute_stats(users)
+    return render_template("dashboard.html", users=users, stats=stats)
 
 @app.route("/api/users", methods=["GET"])
 def api_list():
@@ -233,6 +254,28 @@ def api_send_message():
     if ok:
         return jsonify({"ok": True})
     return jsonify({"error": msg}), 500
+
+@app.route("/export.csv")
+def export_csv():
+    if not check_login():
+        return redirect(url_for("index"))
+    users, _ = gh_get_users()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Pseudo", "Topic", "Expire", "WhatsApp", "Note"])
+    for pseudo, info in users.items():
+        writer.writerow([
+            pseudo,
+            info.get("topic", ""),
+            info.get("expire", ""),
+            info.get("whatsapp", ""),
+            info.get("note", "")
+        ])
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=users-{datetime.now().strftime('%Y%m%d')}.csv"}
+    )
 
 @app.route("/ping")
 def ping():

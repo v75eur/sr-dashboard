@@ -8,14 +8,36 @@
 </head>
 <body>
   <header>
-    <h1>📊 SR Dashboard — Utilisateurs</h1>
+    <h1>📊 SR Dashboard</h1>
     <div>
       <a href="/messages" class="logout" style="color:#00d4ff">💬 Messages</a>
+      <a href="/export.csv" class="logout" style="color:#28c840">📤 CSV</a>
       <a href="/logout" class="logout">Déconnexion</a>
     </div>
   </header>
 
   <main>
+    <!-- STATISTIQUES -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num">{{ stats.total }}</div>
+        <div class="stat-lbl">👥 Total</div>
+      </div>
+      <div class="stat-card actif">
+        <div class="stat-num">{{ stats.actifs }}</div>
+        <div class="stat-lbl">✅ Actifs</div>
+      </div>
+      <div class="stat-card bientot">
+        <div class="stat-num">{{ stats.bientot }}</div>
+        <div class="stat-lbl">⏰ Expirent bientôt</div>
+      </div>
+      <div class="stat-card expire">
+        <div class="stat-num">{{ stats.expires }}</div>
+        <div class="stat-lbl">❌ Expirés</div>
+      </div>
+    </section>
+
+    <!-- AJOUT UTILISATEUR -->
     <section class="add-user">
       <h2>➕ Ajouter / Modifier un utilisateur</h2>
       <form id="userForm">
@@ -29,11 +51,18 @@
       <div id="msg"></div>
     </section>
 
+    <!-- RECHERCHE -->
+    <section>
+      <input type="text" id="search" placeholder="🔍 Rechercher un utilisateur..." class="search-bar">
+    </section>
+
+    <!-- LISTE UTILISATEURS -->
     <section class="users-list">
       <h2>👥 Utilisateurs ({{ users|length }})</h2>
       <table id="usersTable">
         <thead>
           <tr>
+            <th>Statut</th>
             <th>Pseudo</th>
             <th>Topic</th>
             <th>Expire</th>
@@ -44,11 +73,22 @@
         </thead>
         <tbody>
         {% for pseudo, info in users.items() %}
+          {% set exp = info.expire %}
+          {% set today = stats.today_str %}
           <tr data-pseudo="{{ pseudo }}"
               data-topic="{{ info.topic }}"
               data-expire="{{ info.expire }}"
               data-whatsapp="{{ info.whatsapp or '' }}"
               data-note="{{ info.note or '' }}">
+            <td>
+              {% if info.expire < stats.today_str %}
+                <span class="badge-expire">❌</span>
+              {% elif info.expire <= stats.bientot_str %}
+                <span class="badge-bientot">⏰</span>
+              {% else %}
+                <span class="badge-actif">✅</span>
+              {% endif %}
+            </td>
             <td><strong>{{ pseudo }}</strong></td>
             <td><code>{{ info.topic }}</code></td>
             <td>{{ info.expire }}</td>
@@ -137,6 +177,15 @@ function envoyerWA(pseudo) {
   const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
   window.open(url, '_blank');
 }
+
+// RECHERCHE
+document.getElementById('search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#usersTable tbody tr').forEach(tr => {
+    const txt = tr.textContent.toLowerCase();
+    tr.style.display = txt.includes(q) ? '' : 'none';
+  });
+});
 </script>
 </body>
 </html>

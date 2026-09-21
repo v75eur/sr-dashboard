@@ -96,3 +96,51 @@ code{background:rgba(0,212,255,.08);padding:.2rem .5rem;border-radius:4px;font-s
 .edit:hover{background:rgba(0,212,255,.2)}
 .wa{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;padding:.4rem .7rem;border-radius:6px;cursor:pointer;font-size:.85rem;margin-right:.2rem}
 .wa:hover{background:rgba(37,211,102,.2)}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:#15152a;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:1.2rem;text-align:center}
+.stat-card.actif{border-color:rgba(40,200,64,.3)}
+.stat-card.bientot{border-color:rgba(255,189,46,.3)}
+.stat-card.expire{border-color:rgba(255,95,87,.3)}
+.stat-num{font-size:2rem;font-weight:900;color:#00d4ff;margin-bottom:.3rem}
+.stat-card.actif .stat-num{color:#28c840}
+.stat-card.bientot .stat-num{color:#ffbd2e}
+.stat-card.expire .stat-num{color:#ff5f57}
+.stat-lbl{font-size:.85rem;color:rgba(255,255,255,.6)}
+
+/* BADGES STATUT */
+.badge-actif,.badge-bientot,.badge-expire{font-size:1rem}
+.badge-bientot{animation:pulse 2s infinite}
+
+/* SEARCH */
+.search-bar{width:100%;padding:.8rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:.95rem;margin-bottom:1rem}
+.search-bar:focus{outline:none;border-color:#00d4ff}
+
+/* BOUTON WA REPLY */
+.wa-reply{margin-top:.8rem;padding:.6rem 1.2rem;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600}
+.wa-reply:hover{background:rgba(37,211,102,.2)}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:#15152a;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:1.2rem;text-align:center}
+.stat-card.actif{border-color:rgba(40,200,64,.3)}
+.stat-card.bientot{border-color:rgba(255,189,46,.3)}
+.stat-card.expire{border-color:rgba(255,95,87,.3)}
+.stat-num{font-size:2rem;font-weight:900;color:#00d4ff;margin-bottom:.3rem}
+.stat-card.actif .stat-num{color:#28c840}
+.stat-card.bientot .stat-num{color:#ffbd2e}
+.stat-card.expire .stat-num{color:#ff5f57}
+.stat-lbl{font-size:.85rem;color:rgba(255,255,255,.6)}
+
+/* BADGES STATUT */
+.badge-actif,.badge-bientot,.badge-expire{font-size:1rem}
+.badge-bientot{animation:pulse 2s infinite}
+
+/* SEARCH */
+.search-bar{width:100%;padding:.8rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:.95rem;margin-bottom:1rem}
+.search-bar:focus{outline:none;border-color:#00d4ff}
+
+/* BOUTON WA REPLY */
+.wa-reply{margin-top:.8rem;padding:.6rem 1.2rem;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600}
+.wa-reply:hover{background:rgba(37,211,102,.2)}

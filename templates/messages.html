@@ -34,8 +34,20 @@
         </div>
         {% endfor %}
       </div>
+      {% if pseudo in users and users[pseudo].whatsapp %}
+      <button class="wa-reply" onclick="waRepondre('{{ pseudo }}', '{{ users[pseudo].whatsapp }}')">💬 Répondre sur WhatsApp</button>
+      {% endif %}
     </section>
     {% endfor %}
   </main>
+
+<script>
+function waRepondre(pseudo, whatsapp) {
+  const num = whatsapp.replace(/[^0-9]/g, '');
+  const msg = 'Bonjour ' + pseudo + ' 👋\n\n';
+  const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+</script>
 </body>
 </html>
