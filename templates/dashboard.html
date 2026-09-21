@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SR Dashboard</title>
 <link rel="stylesheet" href="/static/style.css">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#00d4ff">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
 </head>
 <body>
   <header>
@@ -179,5 +182,6 @@ document.getElementById('search').addEventListener('input', function() {
   });
 });
 </script>
+<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/static/sw.js"); }</script>
 </body>
 </html>
